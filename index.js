@@ -2,16 +2,30 @@ const fs = require("fs");
 const inquirer = require('inquirer');
 
 console.log('begining test')
-const blockRegex = /^[^\s{}]+{([^{}]+|{([^{}]+|{})+})+}/gm
+const blockRegex = /^[^\s{}][^{}]+{([^{}]+|{([^{}]+|{})+})+}$/gm
 const cssFileNameRegex = /[^\s/]+\.css/
 // compares blocks of css code to understand order. Block would look like this: 'standard-css-label'.
 /* 1=first is higher, -1=second is higher, 0=the same */
 function compareBlocks(b1, b2){
     let maxLength = Math.max(b1.length, b2.length)
     for(let i=0; i<maxLength; i++){
-        if(b1.charCodeAt(i)>b2.charCodeAt(i)){
+        let charNum1 = b1.charCodeAt(i)>=65&&b1.charCodeAt(i)<=90? b1.charCodeAt(i)+32:b1.charCodeAt(i)
+        let charNum2 = b2.charCodeAt(i)>=65&&b2.charCodeAt(i)<=90? b2.charCodeAt(i)+32:b2.charCodeAt(i)
+        if(i===0){
+            if(charNum1==58){
+                charNum1 = -2
+            }else if(charNum1==64){
+                charNum1 = -1
+            }
+            if(charNum2==58){
+                charNum2 = -2
+            }else if(charNum2==64){
+                charNum2 = -1
+            }
+        }
+        if(charNum1>charNum2){
             return -1
-        }else if(b1.charCodeAt(i)<b2.charCodeAt(i)){
+        }else if(charNum1<charNum2){
             return 1
         }
     }
@@ -35,7 +49,6 @@ function mergeSort(arr){
         if(f===front.length||e===end.length){
             break
         }
-        console.log(compareBlocks(front[f],end[e]))
         switch(compareBlocks(front[f],end[e])){
             case -1:
                 sortedArr.push(end[e])
