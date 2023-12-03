@@ -3,6 +3,7 @@ const inquirer = require('inquirer');
 
 console.log('begining test')
 const blockRegex = /^[^\s{}]+{([^{}]+|{([^{}]+|{})+})+}/gm
+const cssFileNameRegex = /[^\s/]+\.css/
 // compares blocks of css code to understand order. Block would look like this: 'standard-css-label'.
 /* 1=first is higher, -1=second is higher, 0=the same */
 function compareBlocks(b1, b2){
@@ -12,16 +13,15 @@ function compareBlocks(b1, b2){
             return -1
         }else if(b1.charCodeAt(i)<b2.charCodeAt(i)){
             return 1
-        }else{
-            return 0
         }
     }
+    return 1
 }
 function mergeSort(arr){
     const copy = Array.from(arr)
     const mid = Math.floor(copy.length/2)
     var front = copy.slice(0, mid)
-    var end = copy.slice(mid+1,copy.length-1)
+    var end = copy.slice(mid,copy.length)
     if(front.length>1){
         front = mergeSort(front)
     }
@@ -35,6 +35,7 @@ function mergeSort(arr){
         if(f===front.length||e===end.length){
             break
         }
+        console.log(compareBlocks(front[f],end[e]))
         switch(compareBlocks(front[f],end[e])){
             case -1:
                 sortedArr.push(end[e])
@@ -48,6 +49,8 @@ function mergeSort(arr){
                 sortedArr.push(front[f])
                 f++
                 break
+            default:
+                console.log('Something went wrong')
         }
     }
     if(f!=front.length){
@@ -60,7 +63,7 @@ function mergeSort(arr){
             sortedArr.push(end[i])
         }
     }
-    console.log(sortedArr)
+    //console.log(sortedArr)
     return sortedArr
 }
 inquirer.prompt(
@@ -72,18 +75,30 @@ inquirer.prompt(
         }
     ]
 ).then(response=>{
-    fs.readFile(response.path, 'utf8', (err, data)=>{
+    fs.readFile(response.path, 'utf8', async (err, data)=>{
         if(err){
             console.log(err)
             return
         }
-        //console.log(typeof data)
-        //console.log(data)
+        var cssFileName = response.path.match(cssFileNameRegex)[0]
         var arr = data.match(blockRegex)
-        console.log(arr)
-        //console.log(typeof arr)
         var sorted = mergeSort(arr)
         console.log(sorted)
+        await sortDirCreate()
+        fs.writeFile(`./Sorted Files/Sorted_${cssFileName}`, sorted.join('\n'), (err)=>{
+            if(err){
+                console.log(err)
+            }
+        })
     })
 })
+
+async function sortDirCreate(){
+    if(!(await sortDirExists())){
+        fs.mkdirSync('./Sorted Files')
+    }
+}
+async function sortDirExists(){
+    return fs.existsSync('./Sorted Files')
+}
 
